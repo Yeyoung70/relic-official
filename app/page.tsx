@@ -10,12 +10,12 @@ type Member = {
 
 const members: Member[] = [
   {
-    id: 0, nameKo: '우리', nameEn: 'WOORI', pos: '리더 · 메인래퍼',
+    id: 0, nameKo: '우리', nameEn: 'WOORI', pos: '리더 · 서브보컬',
     material: 'WOOD', matKo: '나무', symbol: '나무 = 기억',
     bg: '#40282C', color: '#c9a87a',
     img: '/members/woori_01.jpg', imgDetail: '/members/woori.jpg',
-    trait: '안경을 쓰고 항상 책을 들고 있다. 말이 적지만 한 마디 한 마디가 무겁다. 팀의 철학적 방향을 잡는 지성파 리더.',
-    trivia: '나무의 나이테처럼 모든 경험이 몸에 새겨진다고 믿음. 쉬는 날엔 혼자 목공소 견학.',
+    trait: '안경쓴 모습이 종종 포착된다. 말이 적지만 한 마디 한 마디가 무겁다. 팀의 철학적 방향을 잡는 지성파 리더.',
+    trivia: '나무의 나이테처럼 모든 경험이 몸에 새겨진다고 믿음. 쉬는 날엔 혼자 독서와 목공소를 간다.',
     keywords: ['지성파', '인문학', '묵직함', '리더십', '서재'],
   },
   {
@@ -23,7 +23,7 @@ const members: Member[] = [
     material: 'METAL', matKo: '금속', symbol: '금속 = 의지',
     bg: '#141c24', color: '#8ab0c9',
     img: '/members/geon_01.jpg', imgDetail: '/members/geon.jpg',
-    trait: '차와 바이크를 좋아한다. 기계 구조에 대한 이해가 깊어 무대 메커니즘도 직접 분석.',
+    trait: '차와 바이크를 좋아한다. 기계 구조에 대한 이해가 깊어 무대 메커니즘도 직접 분석하는 것을 좋아한다.',
     trivia: '연습실에 미니 공구함 보유. 키링 디자인은 본인이 직접 CAD 스케치 참여.',
     keywords: ['정밀함', '기계공학', '단단함', '퍼포먼스', '속도'],
   },
@@ -32,8 +32,8 @@ const members: Member[] = [
     material: 'GLASS', matKo: '유리', symbol: '유리 = 투명성',
     bg: '#0d1e26', color: '#7abcca',
     img: '/members/haru_01.jpg', imgDetail: '/members/haru.jpg',
-    trait: '공예를 좋아하고 유리 공방을 자주 찾는다. 감정이 유리처럼 투명하게 드러나는 타입.',
-    trivia: '선글라스 컬렉터. 황금시간대에 산책 필수.',
+    trait: '섬세하고 투명한 것을 좋아하여 유리 공방을 자주 찾는다. 감정이 유리처럼 투명하게 드러나는 타입.',
+    trivia: '선글라스 컬렉터. 의외로 황금시간대 산책을 즐김.',
     keywords: ['투명함', '섬세함', '보컬', '빛', '감성'],
   },
   {
@@ -41,8 +41,8 @@ const members: Member[] = [
     material: 'CERAMIC', matKo: '도자', symbol: '도자 = 시간',
     bg: '#1e1208', color: '#c99e70',
     img: '/members/sol_01.jpg', imgDetail: '/members/sol.jpg',
-    trait: '평소엔 멘헤라 기질. 래핑 시작하면 눈빛이 완전히 달라진다. 공구에 집착적 애착.',
-    trivia: '공구 100개 이상 보유. 도자기 굽는 영상 ASMR이 팬들 사이 인기.',
+    trait: '평소엔 기운이 없어 보임. 래핑 시작하면 눈빛이 완전히 달라진다. 도자기에 집착적 애착.',
+    trivia: '도자기 100개 이상 보유. 물레로 도자기를 만드는 영상이 팬들 사이 인기.',
     keywords: ['이중성', '집착', '도구', '변화', '불꽃'],
   },
   {
@@ -50,7 +50,7 @@ const members: Member[] = [
     material: 'TEXTILE', matKo: '섬유', symbol: '섬유 = 연결',
     bg: '#160e20', color: '#a888c9',
     img: '/members/riel_01.jpg', imgDetail: '/members/riel.jpg',
-    trait: '팀 내 가장 귀엽고 막내다운 외모. 재봉과 섬유 공예에 대한 전문성은 팀 최고.',
+    trait: '팀 내 가장 귀엽고 막내다운 외모. 섬유로 된 것들을 손으로 직접 만드는 것과 섬유 공예에 관심이 많다.',
     trivia: '재봉틀 3대 보유. 자수로 팬 편지 답장.',
     keywords: ['연결', '귀여움', '섬세한손길', '직물', '따뜻함'],
   },
@@ -494,24 +494,50 @@ export default function Home() {
                   </div>
                 </div>
                 {/* 기본 정보 */}
-                <div style={{padding:'1.2rem',borderRight:isMobile?'none':'0.5px solid #593F3F44',borderBottom:isMobile?'0.5px solid #593F3F44':'none'}}>
-                  <div style={{fontSize:12,color:'#BFA399',marginBottom:'0.3rem'}}>{m.pos}</div>
-                  <div style={{marginTop:'0.8rem',padding:'4px 10px',border:`0.5px solid ${m.color}55`,display:'inline-block',fontSize:11,color:m.color,letterSpacing:'0.1em',fontFamily:'monospace'}}>{m.material} · {m.matKo}</div>
-                  <div style={{marginTop:'0.6rem',fontSize:11,color:'#593F3F',fontStyle:'italic'}}>"{m.symbol}"</div>
-                  <div style={{marginTop:'1rem',display:'flex',gap:5,flexWrap:'wrap'}}>
-                    {m.keywords.map(k=>(
-                      <span key={k} style={{fontSize:10,padding:'3px 8px',border:'0.5px solid #593F3F44',color:'#BFA399',fontFamily:'monospace'}}>{k}</span>
-                    ))}
+                <div style={{
+                  padding:'1.5rem',
+                  borderRight:isMobile?'none':'0.5px solid #593F3F44',
+                  borderBottom:isMobile?'0.5px solid #593F3F44':'none',
+                  display:'flex',
+                  flexDirection:'column',
+                  justifyContent:'center',
+                  gap:'1rem',
+                }}>
+                  <div>
+                    <div style={{fontSize:10,letterSpacing:'0.2em',color:'#BFA39966',fontFamily:'monospace',marginBottom:'0.4rem'}}>POSITION</div>
+                    <div style={{fontSize:13,color:'#BFA399'}}>{m.pos}</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:10,letterSpacing:'0.2em',color:'#BFA39966',fontFamily:'monospace',marginBottom:'0.4rem'}}>MATERIAL</div>
+                    <div style={{padding:'4px 10px',border:`0.5px solid ${m.color}55`,display:'inline-block',fontSize:11,color:m.color,letterSpacing:'0.1em',fontFamily:'monospace'}}>{m.material} · {m.matKo}</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:10,letterSpacing:'0.2em',color:'#BFA39966',fontFamily:'monospace',marginBottom:'0.4rem'}}>SYMBOL</div>
+                    <div style={{fontSize:12,color:'#593F3F88',fontStyle:'italic'}}>"{m.symbol}"</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:10,letterSpacing:'0.2em',color:'#BFA39966',fontFamily:'monospace',marginBottom:'0.6rem'}}>KEYWORDS</div>
+                    <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                      {m.keywords.map(k=>(
+                        <span key={k} style={{fontSize:10,padding:'3px 8px',border:'0.5px solid #593F3F44',color:'#BFA399',fontFamily:'monospace'}}>{k}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 {/* 설명 */}
-                <div style={{padding:'1.2rem'}}>
-                  <div style={{marginBottom:'1rem'}}>
-                    <div style={{fontSize:10,letterSpacing:'0.2em',color:'#BFA399',fontFamily:'monospace',marginBottom:'0.5rem'}}>PERSONALITY</div>
+                <div style={{
+                  padding:'1.5rem',
+                  display:'flex',
+                  flexDirection:'column',
+                  justifyContent:'center',
+                  gap:'1.2rem',
+                }}>
+                  <div>
+                    <div style={{fontSize:10,letterSpacing:'0.2em',color:'#BFA39966',fontFamily:'monospace',marginBottom:'0.5rem'}}>PERSONALITY</div>
                     <div style={{fontSize:13,color:'#8c8680',lineHeight:1.8}}>{m.trait}</div>
                   </div>
-                  <div style={{padding:'0.8rem',background:'#40282C',border:'0.5px solid #593F3F44'}}>
-                    <div style={{fontSize:10,letterSpacing:'0.15em',color:'#BFA399',fontFamily:'monospace',marginBottom:'0.4rem'}}>TRIVIA</div>
+                  <div style={{padding:'1rem',background:'#40282C',border:'0.5px solid #593F3F44'}}>
+                    <div style={{fontSize:10,letterSpacing:'0.15em',color:'#BFA39966',fontFamily:'monospace',marginBottom:'0.4rem'}}>TRIVIA</div>
                     <div style={{fontSize:12,color:'#BFA399',lineHeight:1.7}}>{m.trivia}</div>
                   </div>
                 </div>
