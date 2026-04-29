@@ -62,9 +62,36 @@ const members: Member[] = [
 ];
 
 const collections = [
-  { num: 'COLLECTION 01', name: 'FIRST CONTACT', ko: '첫 번째 접촉', desc: '미지의 문명에서 발견된 5개의 유물.', date: '1ST MINI · 2025.04', bg: '#1c1510' },
-  { num: 'COLLECTION 02', name: 'DOMESTIC ALIENS', ko: '일상의 외계인', desc: '유물이 일상에 침투한다.', date: '2ND MINI · 2025.10', bg: '#0f1820' },
-  { num: 'COLLECTION 03', name: 'GRAVITY OBJECTS', ko: '중력 오브제', desc: '중력이 다른 행성의 공예.', date: '1ST FULL · 2026', bg: '#141a0f' },
+  { 
+    num: 'COLLECTION 01', 
+    name: 'VOID PROTOCOL', 
+    ko: '무효 규약', 
+    desc: '존재가 무효화된 문명의 첫 번째 신호.',
+    date: '1ST MINI · 2025.04',
+    bg: '#1c1510',
+    img: '/albums/album_1.jpg',
+    audio: '/audio/album_1.mp3',
+  },
+  { 
+    num: 'COLLECTION 02', 
+    name: 'ERRR : 侵', 
+    ko: '오류 · 침범',
+    desc: '일상에 오류처럼 침투하다.',
+    date: '2ND MINI · 2025.10',
+    bg: '#0f1820',
+    img: '/albums/album_2.jpg',
+    audio: '/audio/album_2.mp3',
+  },
+  { 
+    num: 'COLLECTION 03', 
+    name: 'SPECIMEN∞', 
+    ko: '영원한 표본',
+    desc: '영원히 분류되지 않는 유물.',
+    date: '1ST FULL · 2026',
+    bg: '#141a0f',
+    img: '/albums/album_3.jpg',
+    audio: '/audio/album_3.mp3',
+  },
 ];
 
 // ── 균열 캔버스 컴포넌트 ──────────────────────────────────────────
@@ -191,6 +218,200 @@ function MarbleTexture() {
     </svg>
   );
 }
+
+// ── 앨범 로우 컴포넌트 ──────────────────────────────────────────
+function AlbumRow({ c, idx }: { c: { num: string; name: string; ko: string; desc: string; date: string; bg: string; img: string; audio: string }; idx: number }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  function togglePlay() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+    } else {
+      audio.play();
+    }
+    setPlaying(!playing);
+  }
+
+  function onTimeUpdate() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setProgress((audio.currentTime / audio.duration) * 100);
+  }
+
+  function onLoadedMetadata() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setDuration(audio.duration);
+  }
+
+  function onEnded() {
+    setPlaying(false);
+    setProgress(0);
+  }
+
+  function seekTo(e: React.MouseEvent<HTMLDivElement>) {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const ratio = x / rect.width;
+    audio.currentTime = ratio * audio.duration;
+    setProgress(ratio * 100);
+  }
+
+  function formatTime(sec: number) {
+    if (!sec || isNaN(sec)) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  const isEven = idx % 2 === 0;
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: isEven ? '340px 1fr' : '1fr 340px',
+      gap: 40,
+      alignItems: 'center',
+    }}>
+
+      {/* 앨범 자켓 */}
+      <div style={{ order: isEven ? 0 : 1 }}>
+        <div style={{
+          aspectRatio: '1/1',
+          overflow: 'hidden',
+          border: '0.5px solid #BFA39966',
+          position: 'relative',
+        }}>
+          <img
+            src={c.img}
+            alt={c.name}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
+              transition: 'transform 0.6s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.04)')}
+            onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+          />
+          {/* 앨범 넘버 오버레이 */}
+          <div style={{
+            position: 'absolute', top: 12, left: 12,
+            fontSize: 9, letterSpacing: '0.2em',
+            color: 'rgba(255,255,255,0.5)',
+            fontFamily: 'monospace',
+            background: 'rgba(0,0,0,0.3)',
+            padding: '2px 8px',
+          }}>{c.num}</div>
+        </div>
+      </div>
+
+      {/* 앨범 정보 + 플레이어 */}
+      <div style={{ order: isEven ? 1 : 0 }}>
+        <div style={{ fontSize: 10, letterSpacing: '0.25em', color: '#8a7060', fontFamily: 'monospace', marginBottom: '0.6rem' }}>{c.date}</div>
+        <div style={{ fontSize: 32, fontWeight: 400, color: '#1a0e10', letterSpacing: '0.05em', lineHeight: 1.1, marginBottom: '0.4rem' }}>{c.name}</div>
+        <div style={{ fontSize: 12, color: '#8a7060', letterSpacing: '0.15em', marginBottom: '1rem' }}>{c.ko}</div>
+        <div style={{ width: 40, height: '0.5px', background: '#BFA399', marginBottom: '1.2rem' }} />
+        <div style={{ fontSize: 13, color: '#5a4a3a', lineHeight: 1.9, marginBottom: '2rem' }}>{c.desc}</div>
+
+        {/* 오디오 플레이어 */}
+        <div style={{
+          background: 'rgba(64,40,44,0.08)',
+          border: '0.5px solid #BFA39966',
+          padding: '1.2rem 1.4rem',
+        }}>
+          <audio
+            ref={audioRef}
+            src={c.audio}
+            onTimeUpdate={onTimeUpdate}
+            onLoadedMetadata={onLoadedMetadata}
+            onEnded={onEnded}
+          />
+
+          {/* 상단 — 제목 + 재생버튼 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#1a0e10', letterSpacing: '0.05em' }}>{c.name}</div>
+              <div style={{ fontSize: 10, color: '#8a7060', letterSpacing: '0.1em', fontFamily: 'monospace', marginTop: 2 }}>TITLE TRACK</div>
+            </div>
+
+            {/* 재생 버튼 */}
+            <div
+              onClick={togglePlay}
+              style={{
+                width: 42, height: 42, borderRadius: '50%',
+                border: '0.5px solid #40282C',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', flexShrink: 0,
+                transition: 'background 0.2s',
+                background: playing ? '#40282C' : 'transparent',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#40282C')}
+              onMouseLeave={e => (e.currentTarget.style.background = playing ? '#40282C' : 'transparent')}
+            >
+              {playing ? (
+                // 일시정지 아이콘
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <rect x="2" y="2" width="3.5" height="10" fill="#D9CCC1" />
+                  <rect x="8.5" y="2" width="3.5" height="10" fill="#D9CCC1" />
+                </svg>
+              ) : (
+                // 재생 아이콘
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M3 2L12 7L3 12V2Z" fill={playing ? '#D9CCC1' : '#40282C'} />
+                </svg>
+              )}
+            </div>
+          </div>
+
+          {/* 프로그레스 바 */}
+          <div
+            onClick={seekTo}
+            style={{
+              width: '100%', height: 2,
+              background: '#BFA39944',
+              cursor: 'pointer',
+              position: 'relative',
+              marginBottom: '0.5rem',
+            }}
+          >
+            <div style={{
+              width: `${progress}%`,
+              height: '100%',
+              background: '#40282C',
+              transition: 'width 0.1s linear',
+            }} />
+            <div style={{
+              position: 'absolute',
+              top: '50%', transform: 'translateY(-50%)',
+              left: `${progress}%`,
+              width: 8, height: 8,
+              borderRadius: '50%',
+              background: '#40282C',
+              marginLeft: -4,
+            }} />
+          </div>
+
+          {/* 시간 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8a7060', fontFamily: 'monospace' }}>
+            <span>{formatTime(audioRef.current?.currentTime || 0)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+    
 
 export default function Home() {
   const [selected, setSelected] = useState<number | null>(null);
@@ -432,21 +653,12 @@ export default function Home() {
         <MarbleTexture />
         <CrackCanvas style={{ zIndex: 1 }} />
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 960, margin: '0 auto', padding: '5rem 2rem' }}>
-          <div style={{ fontSize: 10, letterSpacing: '0.35em', color: '#BFA399', marginBottom: '2rem' }}>COLLECTION</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 12 }}>
-            {collections.map(c => (
-              <div key={c.num} style={{ border: '0.5px solid #BFA399', borderRadius: 2, overflow: 'hidden', background: 'rgba(232,226,217,0.6)', backdropFilter: 'blur(4px)' }}>
-                <div style={{ background: c.bg, aspectRatio: '4/3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  <div style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{c.num}</div>
-                  <div style={{ fontSize: 20, fontWeight: 400, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.85)', textAlign: 'center', fontFamily: 'Georgia,serif' }}>{c.name}</div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em' }}>{c.ko}</div>
-                </div>
-                <div style={{ padding: '1rem 1.2rem' }}>
-                  <div style={{ fontSize: 13, marginBottom: 4 }}>{c.name}</div>
-                  <div style={{ fontSize: 12, color: '#BFA399', lineHeight: 1.6, marginBottom: 8 }}>{c.desc}</div>
-                  <div style={{ fontSize: 10, color: '#BFA399', letterSpacing: '0.1em', fontFamily: 'monospace' }}>{c.date}</div>
-                </div>
-              </div>
+          <div style={{ fontSize: 10, letterSpacing: '0.35em', color: '#8a7060', marginBottom: '0.4rem' }}>COLLECTION</div>
+          <div style={{ fontSize: 11, color: '#8a7060', letterSpacing: '0.1em', marginBottom: '3rem' }}>DISCOGRAPHY — 3 RELEASES</div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
+            {collections.map((c, idx) => (
+              <AlbumRow key={c.num} c={c} idx={idx} />
             ))}
           </div>
         </div>
