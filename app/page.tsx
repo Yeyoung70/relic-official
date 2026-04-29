@@ -141,19 +141,7 @@ function CrackCanvas({ style }: { style?: React.CSSProperties }) {
     return()=>{cancelAnimationFrame(animId);clearInterval(spawnTimer);window.removeEventListener('resize',resize);};
   },[]);
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position:'absolute',
-        inset:0,
-        width:'100%',
-        height:'100%',
-        pointerEvents:'none',
-        touchAction:'none',
-        zIndex:0,
-        ...style
-      }}
-    />
+    <canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',touchAction:'none',zIndex:0,...style}}/>
   );
 }
 
@@ -219,40 +207,54 @@ function GroupSlider() {
 }
 
 // ── 앨범 로우 ─────────────────────────────────────────────────────
-function AlbumRow({c,idx}:{c:{num:string;name:string;ko:string;desc:string;date:string;bg:string;img:string;audio:string};idx:number}) {
+function AlbumRow({c,idx,isPlaying,onPlay,onStop}:{
+  c:{num:string;name:string;ko:string;desc:string;date:string;bg:string;img:string;audio:string};
+  idx:number;
+  isPlaying:boolean;
+  onPlay:()=>void;
+  onStop:()=>void;
+}) {
   const audioRef=useRef<HTMLAudioElement>(null);
-  const [playing,setPlaying]=useState(false);
   const [progress,setProgress]=useState(0);
   const [duration,setDuration]=useState(0);
   const [isMobile,setIsMobile]=useState(false);
+
   useEffect(()=>{
     const check=()=>setIsMobile(window.innerWidth<768);
     check();window.addEventListener('resize',check);return()=>window.removeEventListener('resize',check);
   },[]);
-  function togglePlay() {
-    const a = audioRef.current;
-    if (!a) return;
-    if (playing) {
+
+  // 외부에서 isPlaying이 꺼지면 오디오 정지
+  useEffect(()=>{
+    const a=audioRef.current;
+    if(!a)return;
+    if(!isPlaying){
       a.pause();
-      setPlaying(false);
-    } else {
-      const playPromise = a.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => setPlaying(true))
-          .catch(() => {
-            // 모바일 자동재생 차단 시 사용자 제스처로 재시도
-            a.load();
-            a.play().then(() => setPlaying(true)).catch(() => {});
-          });
+      a.currentTime=0;
+      setProgress(0);
+    }
+  },[isPlaying]);
+
+  function togglePlay(){
+    const a=audioRef.current;
+    if(!a)return;
+    if(isPlaying){
+      onStop();
+    }else{
+      onPlay();
+      const p=a.play();
+      if(p!==undefined){
+        p.then(()=>{}).catch(()=>{a.load();a.play().catch(()=>{});});
       }
     }
   }
+
   function onTimeUpdate(){const a=audioRef.current;if(!a)return;setProgress((a.currentTime/a.duration)*100);}
   function onLoadedMetadata(){const a=audioRef.current;if(!a)return;setDuration(a.duration);}
-  function onEnded(){setPlaying(false);setProgress(0);}
+  function onEnded(){onStop();setProgress(0);}
   function seekTo(e:React.MouseEvent<HTMLDivElement>){const a=audioRef.current;if(!a)return;const rect=e.currentTarget.getBoundingClientRect();const ratio=(e.clientX-rect.left)/rect.width;a.currentTime=ratio*a.duration;setProgress(ratio*100);}
   function formatTime(sec:number){if(!sec||isNaN(sec))return'0:00';return`${Math.floor(sec/60)}:${Math.floor(sec%60).toString().padStart(2,'0')}`;}
+
   const isEven=idx%2===0;
   return (
     <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':isEven?'340px 1fr':'1fr 340px',gap:isMobile?24:40,alignItems:'center'}}>
@@ -277,21 +279,10 @@ function AlbumRow({c,idx}:{c:{num:string;name:string;ko:string;desc:string;date:
               <div style={{fontSize:12,fontWeight:500,color:'#1a0e10',letterSpacing:'0.05em'}}>{c.name}</div>
               <div style={{fontSize:10,color:'#8a7060',letterSpacing:'0.1em',fontFamily:'monospace',marginTop:2}}>TITLE TRACK</div>
             </div>
-            <button
-              onClick={togglePlay}
-              style={{
-                width:42, height:42, borderRadius:'50%',
-                border:'0.5px solid #40282C',
-                display:'flex', alignItems:'center', justifyContent:'center',
-                cursor:'pointer', flexShrink:0,
-                background: playing ? '#40282C' : 'transparent',
-                transition:'background 0.2s',
-                WebkitTapHighlightColor:'transparent',
-                touchAction:'manipulation',
-              }}>
-              {playing
-                ? <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="3.5" height="10" fill="#D9CCC1"/><rect x="8.5" y="2" width="3.5" height="10" fill="#D9CCC1"/></svg>
-                : <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2L12 7L3 12V2Z" fill="#40282C"/></svg>}
+            <button onClick={togglePlay} style={{width:42,height:42,borderRadius:'50%',border:'0.5px solid #BFA399',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,background:isPlaying?'#40282C':'transparent',transition:'background 0.2s',WebkitTapHighlightColor:'transparent',touchAction:'manipulation'}}>
+              {isPlaying
+                ?<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="3.5" height="10" fill="#D9CCC1"/><rect x="8.5" y="2" width="3.5" height="10" fill="#D9CCC1"/></svg>
+                :<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2L12 7L3 12V2Z" fill="#BFA399"/></svg>}
             </button>
           </div>
           <div onClick={seekTo} style={{width:'100%',height:2,background:'#BFA39944',cursor:'pointer',position:'relative',marginBottom:'0.5rem'}}>
@@ -313,6 +304,7 @@ export default function Home() {
   const [scrolled,setScrolled]=useState(false);
   const [isMobile,setIsMobile]=useState(false);
   const [menuOpen,setMenuOpen]=useState(false);
+  const [playingIdx,setPlayingIdx]=useState<number|null>(null);
 
   useEffect(()=>{
     const onScroll=()=>setScrolled(window.scrollY>40);
@@ -332,9 +324,7 @@ export default function Home() {
           <div style={{fontSize:18,fontWeight:400,letterSpacing:'0.3em',color:'#40282C'}}>RELIC</div>
           <div style={{fontSize:8,letterSpacing:'0.15em',color:'#9f898c',marginTop:2}}>5-MEMBER BOY GROUP · ONE LABEL · 2026</div>
         </div>
-
-        {/* 데스크탑 메뉴 */}
-        {!isMobile && (
+        {!isMobile&&(
           <div style={{display:'flex',gap:'1.5rem',fontSize:12,color:'#BFA399',letterSpacing:'0.12em'}}>
             {['CONCEPT','MEMBERS','COLLECTION','UNIVERSE'].map(n=>(
               <a key={n} href={`#${n.toLowerCase()}`} style={{color:'inherit',textDecoration:'none'}}
@@ -343,9 +333,7 @@ export default function Home() {
             ))}
           </div>
         )}
-
-        {/* 모바일 햄버거 */}
-        {isMobile && (
+        {isMobile&&(
           <div onClick={()=>setMenuOpen(!menuOpen)} style={{cursor:'pointer',display:'flex',flexDirection:'column',gap:5,padding:'4px'}}>
             <div style={{width:22,height:1,background:'#40282C',transition:'all 0.3s',transform:menuOpen?'rotate(45deg) translate(4px,4px)':'none'}}/>
             <div style={{width:22,height:1,background:'#40282C',transition:'all 0.3s',opacity:menuOpen?0:1}}/>
@@ -354,8 +342,7 @@ export default function Home() {
         )}
       </nav>
 
-      {/* 모바일 드롭다운 메뉴 */}
-      {isMobile && menuOpen && (
+      {isMobile&&menuOpen&&(
         <div style={{position:'fixed',top:60,left:0,right:0,background:'rgba(217,204,193,0.98)',backdropFilter:'blur(12px)',zIndex:99,borderBottom:'0.5px solid #BFA39944',padding:'1rem 0'}}>
           {['CONCEPT','MEMBERS','COLLECTION','UNIVERSE'].map(n=>(
             <a key={n} href={`#${n.toLowerCase()}`} onClick={()=>setMenuOpen(false)}
@@ -369,10 +356,8 @@ export default function Home() {
         <div style={{position:'absolute',inset:0,background:'#D9CCC1'}}><MarbleTexture/></div>
         <div style={{position:'absolute',top:0,right:0,bottom:0,width:isMobile?'40%':'45%',background:'#40282C'}}/>
         <div style={{position:'absolute',left:isMobile?'60%':'55%',top:0,bottom:0,width:2,background:'linear-gradient(180deg,transparent,#858C74,#593F3F,#858C74,transparent)',zIndex:3,opacity:0.9}}/>
-        {!isMobile && <CrackCanvas style={{zIndex:0, pointerEvents:'none'}}/>}
-
+        {!isMobile&&<CrackCanvas style={{zIndex:0,pointerEvents:'none'}}/>}
         <div style={{position:'relative',zIndex:4,width:'100%',display:'flex',alignItems:'center',padding:isMobile?'0 1rem':'0 2rem'}}>
-          {/* 왼쪽 */}
           <div style={{flex:1,paddingLeft:isMobile?'1rem':'4vw'}}>
             <div style={{fontSize:isMobile?9:11,letterSpacing:'0.4em',color:'#40282C',marginBottom:'1rem'}}>— 5인조 남성 그룹 · 2026 —</div>
             <div style={{fontSize:isMobile?'clamp(48px,14vw,72px)':'clamp(72px,10vw,130px)',fontWeight:400,color:'#40282C',letterSpacing:'0.12em',lineHeight:1}}>RE</div>
@@ -383,20 +368,17 @@ export default function Home() {
               ))}
             </div>
           </div>
-
-          {/* 오른쪽 */}
           <div style={{flex:1,paddingRight:isMobile?'1rem':'4vw',textAlign:'right'}}>
             <div style={{fontSize:isMobile?8:11,letterSpacing:'0.3em',color:'#c9a87a44',fontFamily:'monospace',marginBottom:'1rem'}}>ERR_404 · SIGNAL_LOST</div>
             <div style={{fontSize:isMobile?'clamp(48px,14vw,72px)':'clamp(72px,10vw,130px)',fontWeight:700,color:'#D9CCC1',letterSpacing:'0.08em',lineHeight:1,fontFamily:'monospace',textShadow:'3px 0 #593F3F99,-3px 0 #858C7455'}}>LIC</div>
             <div style={{fontSize:isMobile?9:13,letterSpacing:'0.2em',color:'#c9a87a66',fontFamily:'monospace',marginTop:'0.8rem'}}>ONE LABEL · DEBUT 2026</div>
-            {!isMobile && (
+            {!isMobile&&(
               <div style={{marginTop:'2rem'}}>
                 <span style={{fontSize:10,padding:'5px 16px',border:'0.5px solid #c9a87a44',borderRadius:1,color:'#c9a87a88',fontFamily:'monospace',letterSpacing:'0.15em'}}>VOID PROTOCOL · OUT NOW</span>
               </div>
             )}
           </div>
         </div>
-
         <div style={{position:'absolute',bottom:'2rem',left:'50%',transform:'translateX(-50%)',zIndex:4,fontSize:10,letterSpacing:'0.3em',color:'#BFA399',fontFamily:'monospace'}}>SCROLL ↓</div>
       </section>
 
@@ -407,7 +389,7 @@ export default function Home() {
 
       {/* ── CONCEPT ── */}
       <section id="concept" style={{position:'relative',overflow:'hidden',background:'#2e1a1d'}}>
-      {!isMobile && <CrackCanvas style={{zIndex:0, pointerEvents:'none'}}/>}
+        {!isMobile&&<CrackCanvas style={{zIndex:0,pointerEvents:'none'}}/>}
         <div style={{position:'relative',zIndex:2,maxWidth:900,margin:'0 auto',padding:isMobile?'3rem 1.2rem':'5rem 2rem'}}>
           <div style={{fontSize:10,letterSpacing:'0.35em',color:'#BFA399',marginBottom:'1.2rem'}}>ABOUT</div>
           <h2 style={{fontSize:isMobile?22:28,fontWeight:400,marginBottom:'1rem',letterSpacing:'0.05em',color:'#D9CCC1'}}>다섯 개의 파장, 하나의 신호</h2>
@@ -430,42 +412,21 @@ export default function Home() {
 
       {/* ── MEMBERS ── */}
       <section id="members" style={{position:'relative',background:'#40282C',overflow:'hidden'}}>
-        {!isMobile && <CrackCanvas style={{zIndex:0, pointerEvents:'none'}}/>}
+        {!isMobile&&<CrackCanvas style={{zIndex:0,pointerEvents:'none'}}/>}
         <div style={{position:'relative',zIndex:10,maxWidth:960,margin:'0 auto',padding:isMobile?'3rem 1.2rem':'5rem 2rem'}}>
           <div style={{fontSize:10,letterSpacing:'0.35em',color:'#BFA399',marginBottom:'0.5rem',fontFamily:'monospace'}}>MEMBERS</div>
           <div style={{fontSize:11,color:'#BFA399',letterSpacing:'0.1em',marginBottom:'2rem'}}>WOORI · GEON · HARU · SOL · RIEL</div>
-
-          {/* 멤버 카드 — 모바일 2열 / 데스크탑 5열 */}
           <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(5,1fr)',gap:6,marginBottom:10}}>
             {members.map(m=>(
-              <div key={m.id}
-              onClick={() => setSelected(selected===m.id ? null : m.id)}
-              style={{
-                border: selected===m.id ? `1px solid ${m.color}` : '0.5px solid #593F3F44',
-                borderRadius:2, overflow:'hidden', cursor:'pointer', transition:'border-color 0.2s',
-                position:'relative', zIndex:10,
-                touchAction:'manipulation',
-                WebkitTapHighlightColor:'transparent',
-              }}>
+              <div key={m.id} onClick={()=>setSelected(selected===m.id?null:m.id)}
+                style={{border:selected===m.id?`1px solid ${m.color}`:'0.5px solid #593F3F44',borderRadius:2,overflow:'hidden',cursor:'pointer',transition:'border-color 0.2s',position:'relative',zIndex:10,touchAction:'manipulation',WebkitTapHighlightColor:'transparent'}}>
                 <div style={{position:'relative',aspectRatio:'2/3',overflow:'hidden',background:m.bg}}>
                   <img src={m.img} alt={m.nameKo} draggable={false}
                     style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top',display:'block',filter:'brightness(0.88)',transition:'transform 0.4s ease,filter 0.4s ease'}}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)';
-                      (e.currentTarget as HTMLImageElement).style.filter = 'brightness(1)';
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)';
-                      (e.currentTarget as HTMLImageElement).style.filter = 'brightness(0.88)';
-                    }}
-                    onTouchStart={e => {
-                      (e.currentTarget as HTMLImageElement).style.transform = 'scale(1.02)';
-                      (e.currentTarget as HTMLImageElement).style.filter = 'brightness(1)';
-                    }}
-                    onTouchEnd={e => {
-                      (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)';
-                      (e.currentTarget as HTMLImageElement).style.filter = 'brightness(0.88)';
-                    }}/>
+                    onMouseEnter={e=>{(e.currentTarget as HTMLImageElement).style.transform='scale(1.04)';(e.currentTarget as HTMLImageElement).style.filter='brightness(1)';}}
+                    onMouseLeave={e=>{(e.currentTarget as HTMLImageElement).style.transform='scale(1)';(e.currentTarget as HTMLImageElement).style.filter='brightness(0.88)';}}
+                    onTouchStart={e=>{(e.currentTarget as HTMLImageElement).style.transform='scale(1.02)';(e.currentTarget as HTMLImageElement).style.filter='brightness(1)';}}
+                    onTouchEnd={e=>{(e.currentTarget as HTMLImageElement).style.transform='scale(1)';(e.currentTarget as HTMLImageElement).style.filter='brightness(0.88)';}}/>
                   <div style={{position:'absolute',top:6,right:6,fontSize:8,padding:'2px 5px',border:`0.5px solid ${m.color}88`,color:m.color,letterSpacing:'0.06em',fontFamily:'monospace',background:'rgba(0,0,0,0.3)'}}>{m.material}</div>
                   <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'1.5rem 0.6rem 0.5rem',background:'linear-gradient(transparent,rgba(0,0,0,0.5))'}}>
                     <div style={{fontSize:8,color:'rgba(255,255,255,0.5)',letterSpacing:'0.04em'}}>{m.pos}</div>
@@ -479,12 +440,10 @@ export default function Home() {
             ))}
           </div>
 
-          {/* 멤버 상세 — 모바일 1열 / 데스크탑 3열 */}
           {selected!==null&&(()=>{
             const m=members[selected];
             return (
-              <div style={{border:'0.5px solid #593F3F44',borderRadius:2,background:'#2e1a1d',display:'grid',gridTemplateColumns:isMobile?'1fr':isMobile?'1fr':'280px 1fr 1.6fr',overflow:'hidden'}}>
-                {/* 사진 */}
+              <div style={{border:'0.5px solid #593F3F44',borderRadius:2,background:'#2e1a1d',display:'grid',gridTemplateColumns:isMobile?'1fr':'280px 1fr 1.6fr',overflow:'hidden'}}>
                 <div style={{position:'relative',overflow:'hidden',minHeight:isMobile?240:0}}>
                   <img src={m.imgDetail} alt={m.nameKo} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top',display:'block',filter:'brightness(0.85)'}}/>
                   <div style={{position:'absolute',inset:0,background:isMobile?'linear-gradient(transparent 50%,#2e1a1d)':'linear-gradient(to right,transparent 60%,#2e1a1d)'}}/>
@@ -493,16 +452,7 @@ export default function Home() {
                     <div style={{fontSize:10,color:m.color,letterSpacing:'0.2em',fontFamily:'monospace',marginTop:2}}>{m.nameEn}</div>
                   </div>
                 </div>
-                {/* 기본 정보 */}
-                <div style={{
-                  padding:'1.5rem',
-                  borderRight:isMobile?'none':'0.5px solid #593F3F44',
-                  borderBottom:isMobile?'0.5px solid #593F3F44':'none',
-                  display:'flex',
-                  flexDirection:'column',
-                  justifyContent:'center',
-                  gap:'1rem',
-                }}>
+                <div style={{padding:'1.5rem',borderRight:isMobile?'none':'0.5px solid #593F3F44',borderBottom:isMobile?'0.5px solid #593F3F44':'none',display:'flex',flexDirection:'column',justifyContent:'center',gap:'1rem'}}>
                   <div>
                     <div style={{fontSize:10,letterSpacing:'0.2em',color:'#BFA39966',fontFamily:'monospace',marginBottom:'0.4rem'}}>POSITION</div>
                     <div style={{fontSize:13,color:'#BFA399'}}>{m.pos}</div>
@@ -524,14 +474,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                {/* 설명 */}
-                <div style={{
-                  padding:'1.5rem',
-                  display:'flex',
-                  flexDirection:'column',
-                  justifyContent:'center',
-                  gap:'1.2rem',
-                }}>
+                <div style={{padding:'1.5rem',display:'flex',flexDirection:'column',justifyContent:'center',gap:'1.2rem'}}>
                   <div>
                     <div style={{fontSize:10,letterSpacing:'0.2em',color:'#BFA39966',fontFamily:'monospace',marginBottom:'0.5rem'}}>PERSONALITY</div>
                     <div style={{fontSize:13,color:'#8c8680',lineHeight:1.8}}>{m.trait}</div>
@@ -550,19 +493,28 @@ export default function Home() {
       {/* ── COLLECTION ── */}
       <section id="collection" style={{position:'relative',background:'#D9CCC1',overflow:'hidden'}}>
         <MarbleTexture/>
-        {!isMobile && <CrackCanvas style={{zIndex:0, pointerEvents:'none'}}/>}
+        {!isMobile&&<CrackCanvas style={{zIndex:0,pointerEvents:'none'}}/>}
         <div style={{position:'relative',zIndex:2,maxWidth:960,margin:'0 auto',padding:isMobile?'3rem 1.2rem':'5rem 2rem'}}>
           <div style={{fontSize:10,letterSpacing:'0.35em',color:'#8a7060',marginBottom:'0.4rem'}}>COLLECTION</div>
           <div style={{fontSize:11,color:'#8a7060',letterSpacing:'0.1em',marginBottom:'3rem'}}>DISCOGRAPHY — 3 RELEASES</div>
           <div style={{display:'flex',flexDirection:'column',gap:isMobile?32:48}}>
-            {collections.map((c,idx)=><AlbumRow key={c.num} c={c} idx={idx}/>)}
+            {collections.map((c,idx)=>(
+              <AlbumRow
+                key={c.num}
+                c={c}
+                idx={idx}
+                isPlaying={playingIdx===idx}
+                onPlay={()=>setPlayingIdx(idx)}
+                onStop={()=>setPlayingIdx(null)}
+              />
+            ))}
           </div>
         </div>
       </section>
 
       {/* ── UNIVERSE ── */}
       <section id="universe" style={{position:'relative',background:'#40282C',overflow:'hidden'}}>
-      {!isMobile && <CrackCanvas style={{zIndex:0, pointerEvents:'none'}}/>}
+        {!isMobile&&<CrackCanvas style={{zIndex:0,pointerEvents:'none'}}/>}
         <div style={{position:'relative',zIndex:2,maxWidth:900,margin:'0 auto',padding:isMobile?'3rem 1.2rem':'5rem 2rem'}}>
           <div style={{fontSize:10,letterSpacing:'0.35em',color:'#BFA399',fontFamily:'monospace',marginBottom:'2rem'}}>UNIVERSE</div>
           {[
@@ -572,7 +524,7 @@ export default function Home() {
             {chap:'CHAPTER 03',title:'SPECIMEN∞',text:'분류 불가능한 존재로 진화한다. 첫 번째 정규앨범. RELIC의 세계가 완성된다.'},
           ].map((w,i)=>(
             <div key={i} style={{display:'grid',gridTemplateColumns:isMobile?'80px 1fr':'130px 1fr',borderTop:'0.5px solid #755d61',padding:'1.2rem 0'}}>
-              <div style={{fontSize:isMobile?9:11,letterSpacing:'0. 1em',color:'#755d61',fontFamily:'monospace',paddingTop:2}}>{w.chap}</div>
+              <div style={{fontSize:isMobile?9:11,letterSpacing:'0.1em',color:'#755d61',fontFamily:'monospace',paddingTop:2}}>{w.chap}</div>
               <div>
                 <div style={{fontSize:isMobile?13:15,fontWeight:400,marginBottom:'0.4rem',color:'#D9CCC1'}}>{w.title}</div>
                 <div style={{fontSize:12,color:'#BFA399',lineHeight:1.9}}>{w.text}</div>
@@ -585,7 +537,7 @@ export default function Home() {
       {/* ── FANDOM ── */}
       <section style={{position:'relative',overflow:'hidden',background:'#D9CCC1'}}>
         <MarbleTexture/>
-        {!isMobile && <CrackCanvas style={{zIndex:0, pointerEvents:'none'}}/>}
+        {!isMobile&&<CrackCanvas style={{zIndex:0,pointerEvents:'none'}}/>}
         <div style={{position:'relative',zIndex:2,maxWidth:900,margin:'0 auto',padding:isMobile?'3rem 1.2rem':'5rem 2rem'}}>
           <div style={{padding:'2rem',border:'0.5px solid #BFA399',background:'rgba(232,226,217,0.5)',backdropFilter:'blur(8px)'}}>
             <div style={{fontSize:10,letterSpacing:'0.3em',color:'#BFA399',marginBottom:'0.8rem'}}>FANDOM</div>
