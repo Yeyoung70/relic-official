@@ -61,13 +61,190 @@ const members: Member[] = [
   },
 ];
 
+// ── 그룹 슬라이더 컴포넌트 ──────────────────────────────────────
+function GroupSlider() {
+  const [current, setCurrent] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const total = 3;
+  const images = ['/group/group_01.jpg', '/group/group_02.jpg', '/group/group_03.jpg'];
+
+  // 자동 슬라이드
+  useEffect(() => {
+    if (isDragging) return;
+    const timer = setInterval(() => {
+      setCurrent(prev => (prev + 1) % total);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [isDragging]);
+
+  // 마우스 드래그
+  function onMouseDown(e: React.MouseEvent) {
+    setIsDragging(true);
+    setStartX(e.clientX);
+    setDragOffset(0);
+  }
+  function onMouseMove(e: React.MouseEvent) {
+    if (!isDragging) return;
+    setDragOffset(e.clientX - startX);
+  }
+  function onMouseUp() {
+    if (!isDragging) return;
+    if (dragOffset < -60) setCurrent(prev => (prev + 1) % total);
+    if (dragOffset > 60) setCurrent(prev => (prev - 1 + total) % total);
+    setIsDragging(false);
+    setDragOffset(0);
+  }
+
+  // 터치 드래그
+  function onTouchStart(e: React.TouchEvent) {
+    setIsDragging(true);
+    setStartX(e.touches[0].clientX);
+    setDragOffset(0);
+  }
+  function onTouchMove(e: React.TouchEvent) {
+    if (!isDragging) return;
+    setDragOffset(e.touches[0].clientX - startX);
+  }
+  function onTouchEnd() {
+    if (!isDragging) return;
+    if (dragOffset < -60) setCurrent(prev => (prev + 1) % total);
+    if (dragOffset > 60) setCurrent(prev => (prev - 1 + total) % total);
+    setIsDragging(false);
+    setDragOffset(0);
+  }
+
+  return (
+    <div
+      style={{ position: 'relative', width: '100%', aspectRatio: '21/9', cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseUp}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* 슬라이드 트랙 */}
+      <div style={{
+        display: 'flex',
+        width: '100%',
+        height: '100%',
+        transform: `translateX(calc(${-current * 100}% + ${dragOffset}px))`,
+        transition: isDragging ? 'none' : 'transform 0.7s cubic-bezier(0.4,0,0.2,1)',
+      }}>
+        {images.map((src, i) => (
+          <div key={i} style={{ minWidth: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+            <img
+              src={src}
+              alt={`RELIC group ${i + 1}`}
+              draggable={false}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                display: 'block',
+                filter: 'brightness(0.82)',
+                pointerEvents: 'none',
+              }}
+            />
+            {/* 상하 그라디언트 */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(180deg, #1a0e1044 0%, transparent 30%, transparent 70%, #1a0e10 100%)',
+              pointerEvents: 'none',
+            }} />
+          </div>
+        ))}
+      </div>
+
+      {/* 인디케이터 도트 */}
+      <div style={{
+        position: 'absolute', bottom: '1.2rem', left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex', gap: 8, zIndex: 10,
+      }}>
+        {images.map((_, i) => (
+          <div
+            key={i}
+            onClick={() => setCurrent(i)}
+            style={{
+              width: i === current ? 24 : 6,
+              height: 6,
+              borderRadius: 3,
+              background: i === current ? '#D9CCC1' : '#D9CCC144',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* 좌우 화살표 */}
+      <div
+        onClick={() => setCurrent(prev => (prev - 1 + total) % total)}
+        style={{
+          position: 'absolute', left: '1.5rem', top: '50%',
+          transform: 'translateY(-50%)',
+          width: 36, height: 36,
+          border: '0.5px solid #D9CCC144',
+          borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', zIndex: 10,
+          background: 'rgba(26,14,16,0.4)',
+          backdropFilter: 'blur(4px)',
+          transition: 'border-color 0.2s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.borderColor = '#D9CCC1')}
+        onMouseLeave={e => (e.currentTarget.style.borderColor = '#D9CCC144')}
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M8 2L4 6L8 10" stroke="#D9CCC1" strokeWidth="1" strokeLinecap="round"/>
+        </svg>
+      </div>
+      <div
+        onClick={() => setCurrent(prev => (prev + 1) % total)}
+        style={{
+          position: 'absolute', right: '1.5rem', top: '50%',
+          transform: 'translateY(-50%)',
+          width: 36, height: 36,
+          border: '0.5px solid #D9CCC144',
+          borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', zIndex: 10,
+          background: 'rgba(26,14,16,0.4)',
+          backdropFilter: 'blur(4px)',
+          transition: 'border-color 0.2s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.borderColor = '#D9CCC1')}
+        onMouseLeave={e => (e.currentTarget.style.borderColor = '#D9CCC144')}
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M4 2L8 6L4 10" stroke="#D9CCC1" strokeWidth="1" strokeLinecap="round"/>
+        </svg>
+      </div>
+
+      {/* 슬라이드 번호 */}
+      <div style={{
+        position: 'absolute', bottom: '1.2rem', right: '1.5rem',
+        fontSize: 10, letterSpacing: '0.2em',
+        color: '#D9CCC166', fontFamily: 'monospace', zIndex: 10,
+      }}>
+        {String(current + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+      </div>
+    </div>
+  );
+}
+
 const collections = [
   { 
     num: 'COLLECTION 01', 
     name: 'VOID PROTOCOL', 
     ko: '무효 규약', 
-    desc: '존재가 무효화된 문명의 첫 번째 신호.',
-    date: '1ST MINI · 2025.04',
+    desc: '5인이 처음으로 세상에 신호를 보낸다. RELIC의 시작.',
+    date: '1ST MINI · 2026.04',
     bg: '#1c1510',
     img: '/albums/album_1.jpg',
     audio: '/audio/album_1.mp3',
@@ -76,8 +253,8 @@ const collections = [
     num: 'COLLECTION 02', 
     name: 'ERRR : 侵', 
     ko: '오류 · 침범',
-    desc: '일상에 오류처럼 침투하다.',
-    date: '2ND MINI · 2025.10',
+    desc: '오류처럼 침투하는 에너지. 두 번째 챕터의 개막.',
+    date: '2ND MINI · 2026.10',
     bg: '#0f1820',
     img: '/albums/album_2.jpg',
     audio: '/audio/album_2.mp3',
@@ -86,8 +263,8 @@ const collections = [
     num: 'COLLECTION 03', 
     name: 'SPECIMEN∞', 
     ko: '영원한 표본',
-    desc: '영원히 분류되지 않는 유물.',
-    date: '1ST FULL · 2026',
+    desc: '분류 불가능한 존재로의 진화. RELIC의 완성.',
+    date: '1ST FULL · 2027',
     bg: '#141a0f',
     img: '/albums/album_3.jpg',
     audio: '/audio/album_3.mp3',
@@ -430,7 +607,7 @@ export default function Home() {
       <nav style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '1rem 2rem',
-        borderBottom: `0.5px solid ${scrolled ? '#BFA399' : 'transparent'}`,
+        borderBottom: '1px solidrgba(180, 150, 140, 0.27)',
         position: 'sticky', top: 0, zIndex: 100,
         background: scrolled ? 'rgba(232,226,217,0.92)' : 'transparent',
         backdropFilter: scrolled ? 'blur(12px)' : 'none',
@@ -438,7 +615,7 @@ export default function Home() {
       }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 400, letterSpacing: '0.3em', color: '#40282C' }}>RELIC</div>
-          <div style={{ fontSize: 9, letterSpacing: '0.2em', color: '#BFA399', marginTop: 2 }}>FUTURE RELICS FOR EVERYDAY LIFE</div>
+          <div style={{ fontSize: 9, letterSpacing: '0.2em', color: '#9f898c', marginTop: 2 }}>5-MEMBER BOY GROUP · ONE LABEL · 2026</div>
         </div>
         <div style={{ display: 'flex', gap: '1.5rem', fontSize: 12, color: '#BFA399', letterSpacing: '0.12em' }}>
           {['CONCEPT', 'MEMBERS', 'COLLECTION', 'UNIVERSE'].map(n => (
@@ -475,12 +652,12 @@ export default function Home() {
 
           {/* 왼쪽 텍스트 (대리석) */}
           <div style={{ flex: 1, paddingLeft: '4vw' }}>
-            <div style={{ fontSize: 11, letterSpacing: '0.5em', color: '#40282C', marginBottom: '1.2rem' }}>— ONE LABEL · 2025 DEBUT —</div>
+            <div style={{ fontSize: 11, letterSpacing: '0.5em', color: '#40282C', marginBottom: '1.2rem' }}>— 5인조 남성 그룹 · 2026 —</div>
             <div style={{ fontSize: 'clamp(72px,10vw,130px)', fontWeight: 400, color: '#40282C', letterSpacing: '0.12em', lineHeight: 1 }}>RE</div>
-            <div style={{ fontSize: 13, letterSpacing: '0.3em', color: '#BFA399', marginTop: '1rem' }}>FIRST CONTACT</div>
+            <div style={{ fontSize: 13, letterSpacing: '0.3em', color: '#9f898c', marginTop: '1rem' }}>FIRST CONTACT</div>
             <div style={{ marginTop: '2rem', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {['WOOD', 'METAL', 'GLASS', 'CERAMIC', 'TEXTILE'].map(t => (
-                <span key={t} style={{ fontSize: 10, padding: '4px 12px', border: '0.5px solid #BFA399', borderRadius: 1, color: '#BFA399', letterSpacing: '0.15em' }}>{t}</span>
+              {['우리', '건', '하루', '솔', '리엘'].map(t => (
+                <span key={t} style={{ fontSize: 10, padding: '4px 12px', border: '0.5px solid #9f898c', borderRadius: 1, color: '#9f898c', letterSpacing: '0.15em' }}>{t}</span>
               ))}
             </div>
           </div>
@@ -495,7 +672,7 @@ export default function Home() {
             }}>LIC</div>
             <div style={{ fontSize: 13, letterSpacing: '0.25em', color: '#c9a87a66', fontFamily: 'monospace', marginTop: '1rem' }}>공예돌 · 5인조</div>
             <div style={{ marginTop: '2rem' }}>
-              <span style={{ fontSize: 10, padding: '5px 16px', border: '0.5px solid #c9a87a44', borderRadius: 1, color: '#c9a87a88', fontFamily: 'monospace', letterSpacing: '0.15em' }}>SPECIMEN_001 · CLASSIFIED</span>
+              <span style={{ fontSize: 10, padding: '5px 16px', border: '0.5px solid #c9a87a44', borderRadius: 1, color: '#c9a87a88', fontFamily: 'monospace', letterSpacing: '0.15em' }}>VOID PROTOCOL · OUT NOW</span>
             </div>
           </div>
         </div>
@@ -506,6 +683,11 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── GROUP SLIDER ── */}
+      <section style={{ position: 'relative', overflow: 'hidden', background: '#1a0e10' }}>
+        <GroupSlider />
+      </section>
+
     {/* ── CONCEPT ── */}
     <section id="concept" style={{ position: 'relative', overflow: 'hidden', background: '#2e1a1d' }}>
       <CrackCanvas style={{ zIndex: 1 }} />
@@ -514,24 +696,26 @@ export default function Home() {
 
 
          }}>
-          <div style={{ fontSize: 10, letterSpacing: '0.35em', color: '#BFA399', marginBottom: '1.2rem' }}>BRAND CONCEPT</div>
-          <h2 style={{ fontSize: 28, fontWeight: 400, marginBottom: '1rem', letterSpacing: '0.05em', color: '#D9CCC1' }}>미래의 유물을 지금 만든다</h2>
-          <p style={{ fontSize: 14, color: '#BFA399', lineHeight: 2, maxWidth: 560, marginBottom: '3rem' }}>
-            과거의 도자기, 목공예, 금속공예는 모두 그 시대의 생활용품이었다.<br />
-            시간이 지나 그것들은 "전통"이 되었다.<br />
-            RELIC의 질문 — 그렇다면 지금 우리의 생활용품은?
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 1 }}>
-            {[
-              { num: '01', title: '전통은 만들어지는 것', desc: '보존이 아닌 창조.' },
-              { num: '02', title: '쓰임이 있는 예술', desc: '전시장이 아닌 일상으로.' },
-              { num: '03', title: 'AI × 공예', desc: 'AI는 전통 생성 엔진이다.' },
-              { num: '04', title: '가상 작가 시스템', desc: '작가는 없다. 작품은 있다.' },
+        <div style={{ fontSize: 10, letterSpacing: '0.35em', color: '#BFA399', marginBottom: '1.2rem' }}>ABOUT</div>
+        <h2 style={{ fontSize: 28, fontWeight: 400, marginBottom: '1rem', letterSpacing: '0.05em', color: '#D9CCC1' }}>
+        다섯 개의 파장, 하나의 신호
+        </h2>
+        <p style={{ fontSize: 14, color: '#BFA399', lineHeight: 2, maxWidth: 560, marginBottom: '3rem' }}>
+          RELIC은 ONE Label 소속 5인조 남성 그룹이다.<br />
+          우리, 건, 하루, 솔, 리엘 —<br />
+          5명은 각자의 언어로 지금 이 시대를 기록한다.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 1 }}>
+          {[
+            { num: '01', title: '퍼포먼스', desc: '무대 위에서 완성되는 5개의 파장.' },
+            { num: '02', title: '세계관', desc: '미래 문명이 남긴 유물의 발견자들.' },
+            { num: '03', title: '음악', desc: '장르를 해체하고 재조립한다.' },
+            { num: '04', title: '아이덴티티', desc: '5가지 소재, 하나의 그룹.' },
             ].map(c => (
               <div key={c.num} style={{ padding: '1.5rem', background: 'rgba(232,226,217,0.7)', border: '0.5px solid #593F3F66', backdropFilter: 'blur(4px)' }}>
-                <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#c9a87a', marginBottom: '0.6rem', fontFamily: 'monospace' }}>{c.num}</div>
+                <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#40282C', marginBottom: '0.6rem', fontFamily: 'monospace' }}>{c.num}</div>
                 <div style={{ fontSize: 13, fontWeight: 400, marginBottom: '0.4rem' }}>{c.title}</div>
-                <div style={{ fontSize: 12, color: '#BFA399', lineHeight: 1.7 }}>{c.desc}</div>
+                <div style={{ fontSize: 12, color: '#7b6b6e', lineHeight: 1.7 }}>{c.desc}</div>
               </div>
             ))}
           </div>
@@ -543,7 +727,7 @@ export default function Home() {
         <CrackCanvas />
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 960, margin: '0 auto', padding: '5rem 2rem' }}>
           <div style={{ fontSize: 10, letterSpacing: '0.35em', color: '#BFA399', marginBottom: '0.5rem', fontFamily: 'monospace' }}>MEMBERS</div>
-          <div style={{ fontSize: 11, color: '#BFA399', letterSpacing: '0.1em', marginBottom: '2rem' }}>5 MATERIALS · 5 WAVELENGTHS</div>
+          <div style={{ fontSize: 11, color: '#BFA399', letterSpacing: '0.1em', marginBottom: '2rem' }}>WOORI · GEON · HARU · SOL · RIEL</div>
 
           {/* 멤버 카드 */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6, marginBottom: 10 }}>
@@ -629,7 +813,7 @@ export default function Home() {
                 </div>
                 <div style={{ padding: '1.5rem' }}>
                   <div style={{ marginBottom: '1rem' }}>
-                    <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#BFA399', fontFamily: 'monospace', marginBottom: '0.5rem' }}>CHARACTER</div>
+                    <div style={{ fontSize: 10, letterSpacing: '0.2em', color: '#BFA399', fontFamily: 'monospace', marginBottom: '0.5rem' }}>PERSONALITY</div>
                     <div style={{ fontSize: 13, color: '#8c8680', lineHeight: 1.8 }}>{m.trait}</div>
                   </div>
                   <div style={{ padding: '0.8rem', background: '#40282C', border: '0.5px solid #593F3F44', marginBottom: '0.8rem' }}>
@@ -670,13 +854,17 @@ export default function Home() {
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 900, margin: '0 auto', padding: '5rem 2rem' }}>
           <div style={{ fontSize: 10, letterSpacing: '0.35em', color: '#BFA399', fontFamily: 'monospace', marginBottom: '2rem' }}>UNIVERSE</div>
           {[
-            { chap: 'CHAPTER 00', title: '발견 — Discovery', text: '2025년, 정체불명의 좌표에서 5개의 오브제가 동시에 출현한다. 각 오브제는 같은 문명의 흔적을 가진다.' },
-            { chap: 'CHAPTER 01', title: '첫 번째 접촉 — First Contact', text: '나무는 기억, 금속은 의지, 유리는 투명성, 도자는 시간, 섬유는 연결. 5인이 같은 문명 출신임을 깨닫는다.' },
-            { chap: 'CHAPTER 02', title: '일상의 침투 — Domestic Aliens', text: '유물들이 현대 일상에 스며든다. 팬덤 ARCHIVE는 이 기억의 수집자다.' },
-            { chap: 'CHAPTER 03', title: '중력 오브제 — Gravity Objects', text: '이 문명은 미래에서 왔다. 5인은 미래에서 현재로 유물을 역방향 전송한 존재들이다.' },
+            { chap: 'CHAPTER 00', title: '발견 — Discovery',
+              text: '2026년, RELIC이 세상에 신호를 보낸다. 5개의 좌표, 5명의 아티스트. 이것이 첫 번째 접촉이다.' },
+            { chap: 'CHAPTER 01', title: 'VOID PROTOCOL',
+              text: '존재가 무효화되기 직전의 순간. RELIC의 데뷔 미니앨범. 5인이 처음으로 하나의 소리를 낸다.' },
+            { chap: 'CHAPTER 02', title: 'ERRR : 侵',
+              text: '오류처럼 일상에 침투한다. 두 번째 미니앨범. 팬덤 ARCHIVE와 함께 현실의 경계를 허문다.' },
+            { chap: 'CHAPTER 03', title: 'SPECIMEN∞',
+              text: '분류 불가능한 존재로 진화한다. 첫 번째 정규앨범. RELIC의 세계가 완성된다.' },
           ].map((w, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '130px 1fr', borderTop: '0.5px solid #593F3F44', padding: '1.5rem 0' }}>
-              <div style={{ fontSize: 11, letterSpacing: '0.12em', color: '#3a3028', fontFamily: 'monospace', paddingTop: 2 }}>{w.chap}</div>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '130px 1fr', borderTop: '0.5px solid #755d61', padding: '1.5rem 0' }}>
+              <div style={{ fontSize: 11, letterSpacing: '0.12em', color: '#755d61', fontFamily: 'monospace', paddingTop: 2 }}>{w.chap}</div>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 400, marginBottom: '0.5rem', color: '#D9CCC1' }}>{w.title}</div>
                 <div style={{ fontSize: 13, color: '#BFA399', lineHeight: 1.9 }}>{w.text}</div>
@@ -691,20 +879,20 @@ export default function Home() {
         <MarbleTexture />
         <CrackCanvas style={{ zIndex: 1 }} />
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 900, margin: '0 auto', padding: '5rem 2rem' }}>
-          <div style={{ padding: '2rem', border: '0.5px solid #BFA399', background: 'rgba(232,226,217,0.5)', backdropFilter: 'blur(8px)' }}>
-            <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#BFA399', marginBottom: '0.8rem' }}>FANDOM</div>
-            <div style={{ fontSize: 20, marginBottom: '0.6rem', color: '#40282C' }}>ARCHIVE — 아카이브</div>
-            <div style={{ fontSize: 13, color: '#5a4a3a', lineHeight: 2 }}>
-              문명의 기억을 수집하고 보존하는 자들.<br />
-              RELIC이 만드는 유물을 세상에 기록하는 존재.<br />
-              팬덤 색상 <span style={{ color: '#858C74' }}>파치먼트 베이지</span> × 인크 블랙
-            </div>
-          </div>
+        <div style={{ padding: '2rem', border: '0.5px solid #BFA399', background: 'rgba(232,226,217,0.5)', backdropFilter: 'blur(8px)' }}>
+        <div style={{ fontSize: 10, letterSpacing: '0.3em', color: '#BFA399', marginBottom: '0.8rem' }}>FANDOM</div>
+        <div style={{ fontSize: 20, marginBottom: '0.6rem', color: '#40282C' }}>ARCHIVE — 아카이브</div>
+        <div style={{ fontSize: 13, color: '#5a4a3a', lineHeight: 2 }}>
+          RELIC의 모든 순간을 수집하고 기록하는 자들.<br />
+          그들이 있기에 RELIC의 세계는 완성된다.<br />
+          <span style={{ color: '#bba08f', letterSpacing: '0.1em' }}>WELCOME TO THE ARCHIVE.</span>
+        </div>
+      </div>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ position: 'relative', padding: '1.5rem 2rem', borderTop: '0.5px solid #593F3F44', background: '#40282C', display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#3a3028', letterSpacing: '0.08em', flexWrap: 'wrap', gap: '0.5rem', fontFamily: 'monospace' }}>
+      <footer style={{ position: 'relative', padding: '1.5rem 2rem', borderTop: '0.5px solid #593F3F44', background: '#40282C', display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#755d61', letterSpacing: '0.08em', flexWrap: 'wrap', gap: '0.5rem', fontFamily: 'monospace' }}>
         <div>© 2025 RELIC · ONE LABEL · JYP ENTERTAINMENT</div>
         <div>PORTFOLIO — ONE LABEL PRODUCTION</div>
       </footer>
