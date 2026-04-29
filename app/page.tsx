@@ -46,7 +46,7 @@ const members = [
 ];
 
 export default function Home() {
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState<number | null>(null);
 
   return (
     <main style={{ background: '#0c0a08', minHeight: '100vh', color: '#f0ede8', fontFamily: 'system-ui, sans-serif' }}>
